@@ -1,5 +1,6 @@
 import Slider from '@react-native-community/slider';
 import React, {useEffect, useRef, useState} from 'react';
+
 import {
   ImageBackground,
   ScrollView,
@@ -7,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  LogBox,
 } from 'react-native';
 import TrackPlayer, {useProgress} from 'react-native-track-player';
 import xmljs from 'xml-js';
@@ -16,6 +18,9 @@ interface Lyric {
   start: number;
   text: string;
 }
+
+LogBox.ignoreAllLogs();
+LogBox.ignoreLogs(['Warning: ...']);
 
 const Test: () => React.ReactNode = () => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -114,7 +119,7 @@ const Test: () => React.ReactNode = () => {
 
   // link image
   const image = {
-    uri: 'https://letsenhance.io/static/8f5e523ee6b2479e26ecc91b9c25261e/1015f/MainAfter.jpg',
+    uri: 'https://cdn.pixabay.com/photo/2016/05/05/02/37/sunset-1373171_1280.jpg',
   };
 
   // fotmat time
@@ -126,25 +131,7 @@ const Test: () => React.ReactNode = () => {
 
   return (
     <ImageBackground source={image} resizeMode="cover" style={styles.image}>
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-        <Text style={{fontSize: 20, color: 'white', marginBottom: 20}}>
-          Current position: {formatTime(position)}
-        </Text>
-        <Text style={{fontSize: 20, color: 'white', marginBottom: 20}}>
-          Duration: {formatTime(duration)}
-        </Text>
-        <Slider
-          minimumValue={0}
-          maximumValue={duration}
-          value={position}
-          onSlidingComplete={handleSeek}
-          style={{width: '80%', marginVertical: 20}}
-        />
-        <TouchableOpacity
-          onPress={togglePlayback}
-          style={{padding: 10, backgroundColor: 'lightblue'}}>
-          <Text>{isPlaying ? 'Pause' : 'Play'}</Text>
-        </TouchableOpacity>
+      <View style={{flex: 1, justifyContent: 'flex-end', alignItems: 'center'}}>
         <ScrollView
           ref={scrollViewRef}
           style={{marginTop: 20, maxHeight: 40}}
@@ -153,15 +140,38 @@ const Test: () => React.ReactNode = () => {
             <Text
               key={index}
               style={{
-                textAlign: 'center',
+                textAlign: 'left',
                 opacity: index === currentLine ? 1 : 0.2,
-                color: index === currentLine ? 'red' : 'black',
+                color: index === currentLine ? 'red' : 'white',
                 lineHeight: 20,
+                fontSize: 16,
               }}>
               {lyric.text}
             </Text>
           ))}
         </ScrollView>
+        <View>
+          <View style={{width: '75%',flexDirection: 'row', justifyContent: 'space-between'}}>
+            <Text style={{fontSize: 14, color: 'white'}}>
+               {formatTime(position)}
+            </Text>
+            <Text style={{fontSize: 14, color: 'white'}}>
+               {formatTime(duration)}
+            </Text>
+          </View>
+        </View>
+        <Slider
+          minimumValue={0}
+          maximumValue={duration}
+          value={position}
+          onSlidingComplete={handleSeek}
+          style={{width: '80%', marginVertical: 2}}
+        />
+        <TouchableOpacity
+          onPress={togglePlayback}
+          style={{padding:10, backgroundColor: 'lightblue', marginBottom: 20, borderRadius: 10}}>
+          <Text>{isPlaying ? 'Pause' : 'Play'}</Text>
+        </TouchableOpacity>
       </View>
     </ImageBackground>
   );
