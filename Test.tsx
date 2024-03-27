@@ -17,7 +17,7 @@ interface Lyric {
   text: string;
 }
 
-const App: () => React.ReactNode = () => {
+const Test: () => React.ReactNode = () => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [position, setPosition] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
@@ -147,15 +147,16 @@ const App: () => React.ReactNode = () => {
         </TouchableOpacity>
         <ScrollView
           ref={scrollViewRef}
-          style={{marginTop: 20, maxHeight: 36, paddingTop: 5}}
+          style={{marginTop: 20, maxHeight: 40}}
           contentContainerStyle={{flexGrow: 1}}>
           {lyrics.map((lyric, index) => (
             <Text
               key={index}
               style={{
                 textAlign: 'center',
-                opacity: index === currentLine ? 1 : 0.5,
+                opacity: index === currentLine ? 1 : 0.2,
                 color: index === currentLine ? 'red' : 'black',
+                lineHeight: 20,
               }}>
               {lyric.text}
             </Text>
@@ -173,4 +174,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+export default Test;
