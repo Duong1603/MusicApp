@@ -1,22 +1,23 @@
+/* eslint-disable react-native/no-inline-styles */
 import Slider from '@react-native-community/slider';
 import React, {useEffect, useRef, useState} from 'react';
 
 import {
   ImageBackground,
+  LogBox,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  LogBox,
 } from 'react-native';
 import TrackPlayer, {useProgress} from 'react-native-track-player';
 import xmljs from 'xml-js';
 
 interface Lyric {
   index: number;
-  start: number;
-  text: string;
+  start: [];
+  text: [];
 }
 
 LogBox.ignoreAllLogs();
@@ -27,21 +28,21 @@ const Test: () => React.ReactNode = () => {
   const [position, setPosition] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [lyrics, setLyrics] = useState<Lyric[]>([]);
-  const [currentLine, setCurrentLine] = useState<number>(-1);
+  const [currentWord, setCurrentWord] = useState<number>(0);
+  const [musicTime, setMusicTime] = useState<number[]>([]);
 
   const scrollViewRef = useRef<ScrollView>(null);
 
   const {position: currentPosition, duration: currentDuration} =
-    useProgress(1000);
-
+    useProgress(100);
   useEffect(() => {
     setPosition(currentPosition);
     setDuration(currentDuration);
     updateLyrics(currentPosition);
-    if (scrollViewRef.current && currentLine !== -1) {
-      scrollViewRef.current.scrollTo({y: currentLine * 20, animated: true});
+    if (scrollViewRef.current && currentWord !== -1) {
+      scrollViewRef.current.scrollTo({y: currentWord * 5, animated: true});
     }
-  }, [currentPosition, currentDuration, currentLine]);
+  }, [currentPosition, currentDuration, currentWord]);
 
   useEffect(() => {
     initializeTrackPlayer();
@@ -62,19 +63,23 @@ const Test: () => React.ReactNode = () => {
     try {
       const options = {
         compact: true,
-        spaces: 2,
+        spaces: 1,
         attributeValueFn: (value: string) => parseFloat(value),
       };
       const jsonData = xmljs.xml2json(xmlData, options);
       const json = JSON.parse(jsonData);
       const params = json.data.param;
+      const time: any[] | ((prevState: number[]) => number[]) = [];
 
-      const lyricsData = params.map((param: any, index: number) => ({
-        index,
-        start: parseFloat(param.i[0]._attributes.va),
-        text: param.i.map((item: any) => item._text).join(''),
-      }));
-
+      const lyricsData = params.map((param: any, index: number) => {
+        time.push(param.i.map((item: any) => item._attributes.va));
+        return {
+          index,
+          start: parseFloat(param.i[0]._attributes.va),
+          text: param.i.map((item: any) => item._text),
+        };
+      });
+      setMusicTime(time.flat());
       setLyrics(lyricsData);
     } catch (error) {
       console.error('Error parsing lyrics:', error);
@@ -111,10 +116,8 @@ const Test: () => React.ReactNode = () => {
 
   // update lyrics
   const updateLyrics = (currentPosition: number) => {
-    const currentLine = lyrics.findIndex(
-      lyric => lyric.start > currentPosition,
-    );
-    setCurrentLine(currentLine > 0 ? currentLine - 1 : 0);
+    const currentWord = musicTime.findIndex(music => music > currentPosition);
+    setCurrentWord(currentWord > 0 ? currentWord - 1 : 0);
   };
 
   // link image
@@ -122,41 +125,66 @@ const Test: () => React.ReactNode = () => {
     uri: 'https://cdn.pixabay.com/photo/2016/05/05/02/37/sunset-1373171_1280.jpg',
   };
 
-  // fotmat time
+  // format time
   const formatTime = (timeInSeconds: number): string => {
     const minutes = Math.floor(timeInSeconds / 60);
     const seconds = Math.floor(timeInSeconds % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
+  let flat = -1;
+
   return (
     <ImageBackground source={image} resizeMode="cover" style={styles.image}>
       <View style={{flex: 1, justifyContent: 'flex-end', alignItems: 'center'}}>
         <ScrollView
           ref={scrollViewRef}
-          style={{marginTop: 20, maxHeight: 40}}
-          contentContainerStyle={{flexGrow: 1}}>
-          {lyrics.map((lyric, index) => (
-            <Text
-              key={index}
-              style={{
-                textAlign: 'left',
-                opacity: index === currentLine ? 1 : 0.2,
-                color: index === currentLine ? 'red' : 'white',
-                lineHeight: 20,
-                fontSize: 16,
-              }}>
-              {lyric.text}
-            </Text>
-          ))}
+          style={{paddingTop: 40, maxHeight: 70, padding: 10}}
+          contentContainerStyle={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            alignItems: 'flex-start',
+          }}>
+          {lyrics.map((lyric, index) => {
+            return (
+              <Text
+                key={index}
+                style={{
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  paddingBottom: 10,
+                }}>
+                {lyric.text.map((text, number) => {
+                  flat++;
+                  return (
+                    <Text
+                      key={number}
+                      style={{
+                        textAlign: 'left',
+                        color: flat === currentWord ? 'red' : 'white',
+                        lineHeight: 20,
+                        fontSize: 16,
+                      }}>
+                      {text}
+                    </Text>
+                  );
+                })}
+              </Text>
+            );
+          })}
         </ScrollView>
         <View>
-          <View style={{width: '75%',flexDirection: 'row', justifyContent: 'space-between'}}>
+          <View
+            style={{
+              width: '75%',
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+            }}>
             <Text style={{fontSize: 14, color: 'white'}}>
-               {formatTime(position)}
+              {formatTime(position)}
             </Text>
             <Text style={{fontSize: 14, color: 'white'}}>
-               {formatTime(duration)}
+              {formatTime(duration)}
             </Text>
           </View>
         </View>
@@ -169,7 +197,12 @@ const Test: () => React.ReactNode = () => {
         />
         <TouchableOpacity
           onPress={togglePlayback}
-          style={{padding:10, backgroundColor: 'lightblue', marginBottom: 20, borderRadius: 10}}>
+          style={{
+            padding: 10,
+            backgroundColor: 'lightblue',
+            marginBottom: 20,
+            borderRadius: 10,
+          }}>
           <Text>{isPlaying ? 'Pause' : 'Play'}</Text>
         </TouchableOpacity>
       </View>
